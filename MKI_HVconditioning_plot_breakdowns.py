@@ -41,13 +41,14 @@ class BreakDown:
         return CPU_DW,CPU_UP,IM
     
 def plotData(BD,BD_ref):
+    refScale=1 #scale factor for reference signals
     plt.figure()
     p1=plt.plot(BD.CPU_DW[0,:],BD.CPU_DW[1,:],color='blue')
     plt.plot(BD.CPU_UP[0,:],BD.CPU_UP[1,:],color='red', label='_nolegend_')
     plt.plot(BD.IM[0,:],BD.IM[1,:],color='green', label='_nolegend_')
-    p2=plt.plot(BD_ref.CPU_DW[0,:],BD_ref.CPU_DW[1,:],color='blue',linestyle='--')
-    plt.plot(BD_ref.CPU_UP[0,:],BD_ref.CPU_UP[1,:],color='red',linestyle='--', label='_nolegend_')
-    plt.plot(BD_ref.IM[0,:],BD_ref.IM[1,:],color='green',linestyle='--', label='_nolegend_')
+    p2=plt.plot(BD_ref.CPU_DW[0,:],refScale*BD_ref.CPU_DW[1,:],color='blue',linestyle='--')
+    plt.plot(BD_ref.CPU_UP[0,:],refScale*BD_ref.CPU_UP[1,:],color='red',linestyle='--', label='_nolegend_')
+    plt.plot(BD_ref.IM[0,:],refScale*BD_ref.IM[1,:],color='green',linestyle='--', label='_nolegend_')
     plt.xlim([51,56])
     plt.xlabel('Time [us]')
     plt.legend(['Breakdown','Reference'])
@@ -58,7 +59,7 @@ def plotData(BD,BD_ref):
 
 def main():  
     #Filepath of three breakdown data sets (CPU_DW, CPU_UP & IM):
-    filePath = r'\\cern.ch\dfs\Users\o\objorkqv\Documents\My Music\2019-11-10'+'/' 
+    filePath = r'\\cern.ch\dfs\Users\o\objorkqv\Documents\My Music\2019-11-03'+'/' 
     BD = BreakDown(filePath)
     #Filepath of three reference data sets (CPU_DW, CPU_UP & IM):
     refFilePath = r'\\cern.ch\dfs\Users\o\objorkqv\Documents\My Music\2019-11-11_2000ns_ref_waveform'+'/'
