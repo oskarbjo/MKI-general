@@ -2,9 +2,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import interpolate
 import signal_toolbox
-data1 = np.loadtxt(R"C:\Users\objorkqv\cernbox\Documents\Python\MKI workspace\MKI general\data\MKIinput.txt",delimiter=',')
 
-f = np.linspace(-0.000001,20e6,10001)
+# data1 = np.loadtxt(R"C:\Users\objorkqv\cernbox\Documents\Python\MKI workspace\MKI general\data\MKIinput.txt",delimiter=',')
+data1=np.loadtxt(r"\\cern.ch\dfs\Users\o\objorkqv\Documents\My Music\2019-11-11_2000ns_ref_waveform\RawWaveform_MKI.867.IPOC.CPU.UP_11.11.19@04h00m00s.csv",skiprows=4,delimiter=',')
+data1[:,0]=data1[:,0]/1e6
+
+f = np.linspace(-0.0000001,20e6,10001)
 jw = 1j*2*np.pi*f
 R0 = 5
 R1 = 5
@@ -13,6 +16,13 @@ C2 = 0.4e-12
 C3 = 2100e-12 + 60e-12
 R2 = 50
 R3 = 1e6
+
+
+# t = np.linspace(0,20e-6,10001)
+# func = np.sin(1e6*2*np.pi*t)
+# data1 = np.transpose([t,func])
+
+
 
 Z1 = R1 / (jw*C1*R1 + 1)
 Z2 = (R2 + R3) / (jw*C3*(R2 + R3) + 1)
@@ -23,7 +33,9 @@ D0 = Z4 / (Z4 + R0)
 D1 = Z2 / (1/(jw*C2) + Z2)
 D2 = R3 / (R2 + R3)
 
-F = 2 * D0 * D1 * D2 * np.sqrt(R0/R3)
+F = 2 * D0 * D1 * D2
+F = 1/F
+# F = F*0 - 0.5
 
 FSIG = np.array([f,F])
 
@@ -34,12 +46,17 @@ FSIG = np.array([f,F])
 
 def main(): 
     pickupSignal = signal_toolbox.Signal(data1[:,0],data1[:,1],1)
-    convolution = signal_toolbox.FDconvolution(FSIG,pickupSignal.FDSIG)
+    convolution = signal_toolbox.FDconvolution(FSIG,pickupSignal.FDSIG,len(pickupSignal.t))
+    
+    y_ifft = np.fft.irfft(pickupSignal.sig_fft)
     
     plt.figure()
     plt.plot(convolution.t,convolution.TDsig)
-#     plt.plot(convolution.t,convolution.TDsig/np.max(convolution.TDsig))
     plt.plot(pickupSignal.t,pickupSignal.signal)
+#     plt.plot(convolution.t,convolution.TDsig/np.max(convolution.TDsig))
+    plt.grid()
+    
+    
     plt.figure()
     plt.plot(FSIG[0,:],20*np.log10(np.abs(FSIG[1,:])))
     plt.plot(pickupSignal.freq,20*np.log10(np.abs(pickupSignal.sig_fft)))

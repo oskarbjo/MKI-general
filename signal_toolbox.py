@@ -145,7 +145,8 @@ class Signal:
 
 class FDconvolution:
     
-    def __init__(self,FDSIG1,FDSIG2):
+    def __init__(self,FDSIG1,FDSIG2,length):
+        self.inputLength = length
         self.f1 = FDSIG1[0,:]
         self.f2 = FDSIG2[0,:]
         self.S1 = FDSIG1[1,:]
@@ -182,6 +183,8 @@ class FDconvolution:
         self.mult = self.S1 * self.S2
 
     def invfft(self):
-        self.TDsig = np.fft.irfft(self.mult)
+        TDsig = np.fft.irfft(self.mult)
+        scaling = len(TDsig)/self.inputLength
+        self.TDsig = TDsig * scaling
         dt = np.real(1/(2*self.f1[-1]))
         self.t = np.arange(0,dt*(len(self.TDsig)),dt)        
