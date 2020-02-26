@@ -7,7 +7,7 @@ import signal_toolbox
 data1=np.loadtxt(r"\\cern.ch\dfs\Users\o\objorkqv\Documents\My Music\2019-11-11_2000ns_ref_waveform\RawWaveform_MKI.867.IPOC.CPU.UP_11.11.19@04h00m00s.csv",skiprows=4,delimiter=',')
 data1[:,0]=data1[:,0]/1e6
 
-f = np.linspace(-0.0000001,20e6,10001)
+f = np.linspace(-100,20e6,10001)
 jw = 1j*2*np.pi*f
 R0 = 5
 R1 = 5
@@ -51,8 +51,8 @@ def main():
     y_ifft = np.fft.irfft(pickupSignal.sig_fft)
     
     plt.figure()
-    plt.plot(convolution.t,convolution.TDsig)
-    plt.plot(pickupSignal.t,pickupSignal.signal)
+    plt.plot(convolution.t,convolution.TDsig/np.max(convolution.TDsig))
+    plt.plot(pickupSignal.t,pickupSignal.signal/np.max(pickupSignal.signal))
 #     plt.plot(convolution.t,convolution.TDsig/np.max(convolution.TDsig))
     plt.grid()
     

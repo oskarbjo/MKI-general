@@ -10,10 +10,11 @@ from os.path import isfile, join
 class BreakDown:
     
     def __init__(self,filePath):
+        self.threshold = 2 #Rising/falling edge threshold
         self.path = filePath
         self.fileNames, self.ind, self.timeStamp=self.getFileNames()
         self.CPU_DW,self.CPU_UP,self.IM = self.getMagnetData(self.fileNames, self.ind)
-        
+        self.timeDelays()
         
     def getFileNames(self):
         fileNames= [f for f in listdir(self.path) if isfile(join(self.path, f))]
@@ -40,30 +41,65 @@ class BreakDown:
         
         return CPU_DW,CPU_UP,IM
     
+    def timeDelays(self):
+        try:
+            #Rising edges:
+            self.t0_rising_ind=next(x[0] for x in enumerate(self.CPU_UP[1,:]) if x[1] > self.threshold)
+            self.t1_rising_ind=next(x[0] for x in enumerate(self.CPU_DW[1,:]) if x[1] > self.threshold)
+            self.risingTimeDelay = self.CPU_DW[0,self.t1_rising_ind]-self.CPU_UP[0,self.t0_rising_ind]
+            #Falling edges:
+            self.t0_falling_ind=next(x[0] for x in enumerate(self.CPU_UP[1,self.t0_rising_ind:]) if x[1] < self.threshold) + self.t0_rising_ind
+            self.t1_falling_ind=next(x[0] for x in enumerate(self.CPU_DW[1,self.t1_rising_ind:]) if x[1] < self.threshold) + self.t1_rising_ind
+            self.fallingTimeDelay = self.CPU_DW[0,self.t1_falling_ind]-self.CPU_UP[0,self.t0_falling_ind]
+
+        except:
+            print('Rising and/or falling edges could not be found')
+        
 def plotData(BD,BD_ref):
     refScale=1 #scale factor for reference signals
-    plt.figure()
+#     plt.figure(num=None, figsize=(10, 6), dpi=140, facecolor='w', edgecolor='k')
+    fig,ax=plt.subplots(num=None, figsize=(10, 6), dpi=140, facecolor='w', edgecolor='k')
     p1=plt.plot(BD.CPU_DW[0,:],BD.CPU_DW[1,:],color='blue')
-    plt.plot(BD.CPU_UP[0,:],BD.CPU_UP[1,:],color='red', label='_nolegend_')
-    plt.plot(BD.IM[0,:],BD.IM[1,:],color='green', label='_nolegend_')
+    plt.plot(BD.CPU_UP[0,:],BD.CPU_UP[1,:],color='red')
+    plt.plot(BD.IM[0,:],BD.IM[1,:],color='green')
     p2=plt.plot(BD_ref.CPU_DW[0,:],refScale*BD_ref.CPU_DW[1,:],color='blue',linestyle='--')
-    plt.plot(BD_ref.CPU_UP[0,:],refScale*BD_ref.CPU_UP[1,:],color='red',linestyle='--', label='_nolegend_')
-    plt.plot(BD_ref.IM[0,:],refScale*BD_ref.IM[1,:],color='green',linestyle='--', label='_nolegend_')
+    plt.plot(BD_ref.CPU_UP[0,:],refScale*BD_ref.CPU_UP[1,:],color='red',linestyle='--')
+    plt.plot(BD_ref.IM[0,:],refScale*BD_ref.IM[1,:],color='green',linestyle='--')
     plt.xlim([51,56])
     plt.xlabel('Time [us]')
-    plt.legend(['Breakdown','Reference'])
+    plt.legend(['CPU DOWN (Breakdown)','CPU UP (Breakdown)', 'Current (Breakdown)', 'CPU DOWN (Reference)','CPU UP (Reference)', 'Current (Reference)'])
     plt.grid()
     plt.title(BD.timeStamp)
+    
+    plt.plot([BD.CPU_UP[0,BD.t0_rising_ind], BD.CPU_DW[0,BD.t1_rising_ind]],[BD.threshold, BD.threshold],color='black',linestyle='dotted')
+    plt.plot([BD.CPU_UP[0,BD.t0_falling_ind], BD.CPU_DW[0,BD.t1_falling_ind]],[BD.threshold, BD.threshold],color='black',linestyle='dotted')
+    
+    #Textbox for time delays between upstream/downstream
+    textstr = '\n'.join((
+    'Rising time delay Reference/Breakdown: ' + str("{0:.3f}".format(BD_ref.risingTimeDelay)) + '/' + str("{0:.3f}".format(BD.risingTimeDelay) + ' [us]'),
+    'Falling time delay Reference/Breakdown: '+ str("{0:.3f}".format(BD_ref.fallingTimeDelay)) + '/' + str("{0:.3f}".format(BD.fallingTimeDelay) + ' [us]')))
+    
+    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    ax.text(0.05, 0.15, textstr, transform=ax.transAxes, fontsize=14,
+        verticalalignment='top', bbox=props)
+    
     plt.show()
+
+
 
 
 def main():  
     #Filepath of three breakdown data sets (CPU_DW, CPU_UP & IM):
-    filePath = r'\\cern.ch\dfs\Users\o\objorkqv\Documents\My Music\2019-11-03'+'/' 
+    filePath = r'\\cern.ch\dfs\Users\o\objorkqv\Documents\My Music\2020-02-24\bd'+'/' 
     BD = BreakDown(filePath)
     #Filepath of three reference data sets (CPU_DW, CPU_UP & IM):
-    refFilePath = r'\\cern.ch\dfs\Users\o\objorkqv\Documents\My Music\2019-11-11_2000ns_ref_waveform'+'/'
+    refFilePath = r'\\cern.ch\dfs\Users\o\objorkqv\Documents\My Music\2020-02-24\ref'+'/'
     BD_ref = BreakDown(refFilePath)
+    
+    print('Rising timedelay: ' + str(BD.risingTimeDelay) + 'us, (' + str(BD.CPU_UP[0,BD.t0_rising_ind]) + '; ' + str(BD.CPU_DW[0,BD.t1_rising_ind]) + ')')
+    print('Falling timedelay: ' + str(BD.fallingTimeDelay) + 'us, (' + str(BD.CPU_UP[0,BD.t0_falling_ind]) + '; ' + str(BD.CPU_DW[0,BD.t1_falling_ind]) + ')')
+    
+    
     plotData(BD,BD_ref)
     
     
