@@ -1,9 +1,12 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from os import listdir
 from os.path import isfile, join
-
-
+import matplotlib.pyplot as plt
+from matplotlib import rc
+rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
+## for Palatino and other serif fonts use:
+#rc('font',**{'family':'serif','serif':['Palatino']})
+rc('text', usetex=True)
 #region/
 Cp_T = [29.48    ,
 30.48    ,
@@ -373,15 +376,42 @@ CTE = [7.79E-06    ,
 9.03E-06    ,
 9.07E-06]
 
+
+thermCond_T = [25.6,
+50.7,
+75.8,
+100.5,
+150.1,
+200]
+
+thermCond = [12.554,
+11.708,
+10.94,
+10.367,
+9.371,
+8.601]
+
 #endregion
 
+path = r"C:\Users\objorkqv\cernbox\Documents\Measurements\Ferrite aga measurements\CMD10_csv.csv"
+data = f=np.loadtxt(path,delimiter=',',unpack=True,usecols=[0,1,2],skiprows=1)
+
+
 plt.subplot(2,2,1)
-plt.plot(Cp_T,Cp)
+plt.plot(Cp_T,np.multiply(Cp,1000))
+ax=plt.gca()
+# plt.ylabel('Specific heat [J/]')
+ax.set_ylabel(r'\text{Specific heat} \frac{\text{J}}{\text{K} \ddot \text{Kg}}')
 
-plt.subplot(2,2,2)
-plt.plot(CTE_T,np.multiply(1e6,CTE))
-
-plt.subplot(2,2,3)
-
-
+# 
+# plt.subplot(2,2,2)
+# plt.plot(CTE_T,np.multiply(1e6,CTE))
+# 
+# plt.subplot(2,2,3)
+# plt.plot(thermCond_T,thermCond)
+# 
+# plt.subplot(2,2,4)
+# plt.plot(data[0,:],data[1,:])
+# plt.plot(data[0,:],data[2,:],linestyle='--')
+# plt.xlim([0, 1000])
 plt.show()

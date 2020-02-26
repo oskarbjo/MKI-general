@@ -77,7 +77,8 @@ def plotData(BD,BD_ref):
     #Textbox for time delays between upstream/downstream
     textstr = '\n'.join((
     'Rising time delay Reference/Breakdown: ' + str("{0:.3f}".format(BD_ref.risingTimeDelay)) + '/' + str("{0:.3f}".format(BD.risingTimeDelay) + ' [us]'),
-    'Falling time delay Reference/Breakdown: '+ str("{0:.3f}".format(BD_ref.fallingTimeDelay)) + '/' + str("{0:.3f}".format(BD.fallingTimeDelay) + ' [us]')))
+    'Falling time delay Reference/Breakdown: '+ str("{0:.3f}".format(BD_ref.fallingTimeDelay)) + '/' + str("{0:.3f}".format(BD.fallingTimeDelay) + ' [us]'),
+    'Time from input to point of breakdown: ' + str("{0:.3f}".format(BD.risingTimeDelay/2 - BD.fallingTimeDelay/2)) + ' [us]'))
     
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     ax.text(0.05, 0.15, textstr, transform=ax.transAxes, fontsize=14,
@@ -90,10 +91,10 @@ def plotData(BD,BD_ref):
 
 def main():  
     #Filepath of three breakdown data sets (CPU_DW, CPU_UP & IM):
-    filePath = r'\\cern.ch\dfs\Users\o\objorkqv\Documents\My Music\2020-02-24\bd'+'/' 
+    filePath = r'\\cern.ch\dfs\Users\o\objorkqv\Documents\My Music\2020-02-25\bd'+'/' 
     BD = BreakDown(filePath)
     #Filepath of three reference data sets (CPU_DW, CPU_UP & IM):
-    refFilePath = r'\\cern.ch\dfs\Users\o\objorkqv\Documents\My Music\2020-02-24\ref'+'/'
+    refFilePath = r'\\cern.ch\dfs\Users\o\objorkqv\Documents\My Music\2020-02-25\ref'+'/'
     BD_ref = BreakDown(refFilePath)
     
     print('Rising timedelay: ' + str(BD.risingTimeDelay) + 'us, (' + str(BD.CPU_UP[0,BD.t0_rising_ind]) + '; ' + str(BD.CPU_DW[0,BD.t1_rising_ind]) + ')')
@@ -101,7 +102,7 @@ def main():
     
     
     plotData(BD,BD_ref)
-    
-    
+
+
 if __name__ == "__main__":
     main()
