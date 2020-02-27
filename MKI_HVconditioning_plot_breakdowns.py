@@ -17,6 +17,7 @@ class BreakDown:
         self.timeDelays()
         
     def getFileNames(self):
+        #Finds the file names corresponding to the three data sets (CPU_UP, CPU_DW, IM)
         fileNames= [f for f in listdir(self.path) if isfile(join(self.path, f))]
         j=0
         for i in fileNames:
@@ -32,6 +33,7 @@ class BreakDown:
         return fileNames,ind,timeStamp
         
     def getMagnetData(self,fileNames,ind):
+        #Extracts the data sets from the files
         CPU_DW_path = self.path+fileNames[ind[0]]
         CPU_UP_path = self.path+fileNames[ind[1]]
         IM_path = self.path+fileNames[ind[2]]
@@ -42,6 +44,7 @@ class BreakDown:
         return CPU_DW,CPU_UP,IM
     
     def timeDelays(self):
+        #Calculates the time delays between the up/down pickup to help trace where breakdowns occur
         try:
             #Rising edges:
             self.t0_rising_ind=next(x[0] for x in enumerate(self.CPU_UP[1,:]) if x[1] > self.threshold)
@@ -56,6 +59,8 @@ class BreakDown:
             print('Rising and/or falling edges could not be found')
         
 def plotData(BD,BD_ref):
+    
+    #Plot traces:
     refScale=1 #scale factor for reference signals
 #     plt.figure(num=None, figsize=(10, 6), dpi=140, facecolor='w', edgecolor='k')
     fig,ax=plt.subplots(num=None, figsize=(10, 6), dpi=140, facecolor='w', edgecolor='k')
@@ -71,6 +76,7 @@ def plotData(BD,BD_ref):
     plt.grid()
     plt.title(BD.timeStamp)
     
+    #Plot markers showing where time measurements are made on rising/falling edges
     plt.plot([BD.CPU_UP[0,BD.t0_rising_ind], BD.CPU_DW[0,BD.t1_rising_ind]],[BD.threshold, BD.threshold],color='black',linestyle='dotted')
     plt.plot([BD.CPU_UP[0,BD.t0_falling_ind], BD.CPU_DW[0,BD.t1_falling_ind]],[BD.threshold, BD.threshold],color='black',linestyle='dotted')
     
@@ -91,10 +97,10 @@ def plotData(BD,BD_ref):
 
 def main():  
     #Filepath of three breakdown data sets (CPU_DW, CPU_UP & IM):
-    filePath = r'\\cern.ch\dfs\Users\o\objorkqv\Documents\My Music\2020-02-25\bd'+'/' 
+    filePath = r'\\cern.ch\dfs\Users\o\objorkqv\Documents\My Music\2020-02-24\bd'+'/' 
     BD = BreakDown(filePath)
     #Filepath of three reference data sets (CPU_DW, CPU_UP & IM):
-    refFilePath = r'\\cern.ch\dfs\Users\o\objorkqv\Documents\My Music\2020-02-25\ref'+'/'
+    refFilePath = r'\\cern.ch\dfs\Users\o\objorkqv\Documents\My Music\2020-02-24\ref'+'/'
     BD_ref = BreakDown(refFilePath)
     
     print('Rising timedelay: ' + str(BD.risingTimeDelay) + 'us, (' + str(BD.CPU_UP[0,BD.t0_rising_ind]) + '; ' + str(BD.CPU_DW[0,BD.t1_rising_ind]) + ')')
