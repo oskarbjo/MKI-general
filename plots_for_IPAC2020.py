@@ -2,11 +2,13 @@ import numpy as np
 from os import listdir
 from os.path import isfile, join
 import matplotlib.pyplot as plt
-from matplotlib import rc
-rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
-## for Palatino and other serif fonts use:
-#rc('font',**{'family':'serif','serif':['Palatino']})
-rc('text', usetex=True)
+
+font = {'family' : 'normal',
+        'weight' : 'bold',
+        'size'   : 13}
+
+plt.rc('font', **font)
+
 #region/
 Cp_T = [29.48    ,
 30.48    ,
@@ -397,21 +399,35 @@ path = r"C:\Users\objorkqv\cernbox\Documents\Measurements\Ferrite aga measuremen
 data = f=np.loadtxt(path,delimiter=',',unpack=True,usecols=[0,1,2],skiprows=1)
 
 
-plt.subplot(2,2,1)
+plt.figure()
 plt.plot(Cp_T,np.multiply(Cp,1000))
-ax=plt.gca()
-# plt.ylabel('Specific heat [J/]')
-ax.set_ylabel(r'\text{Specific heat} \frac{\text{J}}{\text{K} \ddot \text{Kg}}')
+plt.xlabel('Temperature [C]')
+plt.ylabel('Specific heat [J/(kg*K)]')
+plt.grid()
 
-# 
-# plt.subplot(2,2,2)
-# plt.plot(CTE_T,np.multiply(1e6,CTE))
-# 
-# plt.subplot(2,2,3)
-# plt.plot(thermCond_T,thermCond)
-# 
-# plt.subplot(2,2,4)
-# plt.plot(data[0,:],data[1,:])
-# plt.plot(data[0,:],data[2,:],linestyle='--')
-# plt.xlim([0, 1000])
+
+plt.figure()
+plt.plot(CTE_T,np.multiply(1e6,CTE))
+plt.grid()
+plt.ylabel('Coefficient of thermal expansion [10^-6/K]')
+plt.xlabel('Temperature [C]')
+ 
+plt.figure()
+plt.plot(thermCond_T,thermCond)
+plt.xlabel('Temperature [C]')
+plt.ylabel('Thermal conductance [W/(m*K)]')
+plt.grid()
+
+ 
+plt.figure()
+plt.plot(data[0,:],data[1,:])
+plt.plot(data[0,:],data[2,:],linestyle='--')
+plt.xlim([0, 1000])
+plt.xlabel('Frequency [MHz]')
+plt.ylabel('Relative permeability')
+plt.legend(['Real','Imag'])
+plt.grid()
+
+
+
 plt.show()

@@ -45,28 +45,35 @@ FSIG = np.array([f,F])
 # plt.show()
 
 def main(): 
-    pickupSignal = signal_toolbox.Signal(data1[:,0],data1[:,1],1)
-    convolution = signal_toolbox.FDconvolution(FSIG,pickupSignal.FDSIG,len(pickupSignal.t))
-    
-    y_ifft = np.fft.irfft(pickupSignal.sig_fft)
-    
-    plt.figure()
-    plt.plot(convolution.t,convolution.TDsig/np.max(convolution.TDsig))
-    plt.plot(pickupSignal.t,pickupSignal.signal/np.max(pickupSignal.signal))
+#     pickupSignal = signal_toolbox.Signal(data1[:,0],data1[:,1],1)
+#     convolution = signal_toolbox.FDconvolution(FSIG,pickupSignal.FDSIG,len(pickupSignal.t))
+#     
+#     y_ifft = np.fft.irfft(pickupSignal.sig_fft)
+#     
+#     plt.figure()
 #     plt.plot(convolution.t,convolution.TDsig/np.max(convolution.TDsig))
-    plt.grid()
-    
-    
-    plt.figure()
-    plt.plot(FSIG[0,:],20*np.log10(np.abs(FSIG[1,:])))
-    plt.plot(pickupSignal.freq,20*np.log10(np.abs(pickupSignal.sig_fft)))
-    plt.plot(convolution.f1,20*np.log10(np.abs(convolution.mult)))
-#     plt.plot(S.freq,S.S21db)
+#     plt.plot(pickupSignal.t,pickupSignal.signal/np.max(pickupSignal.signal))
+# #     plt.plot(convolution.t,convolution.TDsig/np.max(convolution.TDsig))
+#     plt.grid()
+#     
+#     
+#     plt.figure()
+#     plt.plot(FSIG[0,:],20*np.log10(np.abs(FSIG[1,:])))
+#     plt.plot(pickupSignal.freq,20*np.log10(np.abs(pickupSignal.sig_fft)))
+#     plt.plot(convolution.f1,20*np.log10(np.abs(convolution.mult)))
+# #     plt.plot(S.freq,S.S21db)
+# 
+#     plt.figure()
+#     plt.plot(convolution.f1,20*np.log10(np.abs(convolution.mult)/len(convolution.mult)))
+# 
+# 
+#     plt.show()
+
 
     plt.figure()
-    plt.plot(convolution.f1,20*np.log10(np.abs(convolution.mult)/len(convolution.mult)))
-
-
+    plt.plot([0,1,2],[2,3,4],'ko')
+    plt.title('$\Delta$ title')
+    plt.legend(['$Z_{||}$'])
     plt.show()
     
     

@@ -1,7 +1,9 @@
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from os import listdir
 from os.path import isfile, join
+from scipy.optimize import curve_fit
 
 #Save CPU_DW, CPU_UP and IM breakdown data sets from IPOC explorer to a single folder (no other files should be present)
 #Save CPU_DW, CPU_UP and IM reference data sets from IPOC explorer to another, separate, single folder (no other files should be present)
@@ -90,25 +92,33 @@ def plotData(BD,BD_ref):
     ax.text(0.05, 0.15, textstr, transform=ax.transAxes, fontsize=14,
         verticalalignment='top', bbox=props)
     
-    plt.show()
-
 
 
 
 def main():  
+    
+    ####################### Plot waveforms: #######################
     #Filepath of three breakdown data sets (CPU_DW, CPU_UP & IM):
-    filePath = r'\\cern.ch\dfs\Users\o\objorkqv\Documents\My Music\2020-02-24\bd'+'/' 
+    filePath = r'\\cern.ch\dfs\Users\o\objorkqv\Documents\My Music\2020-03-14\bd1'+'/' 
     BD = BreakDown(filePath)
     #Filepath of three reference data sets (CPU_DW, CPU_UP & IM):
-    refFilePath = r'\\cern.ch\dfs\Users\o\objorkqv\Documents\My Music\2020-02-24\ref'+'/'
+    refFilePath = r'\\cern.ch\dfs\Users\o\objorkqv\Documents\My Music\2020-03-14\ref1'+'/'
     BD_ref = BreakDown(refFilePath)
-    
+      
     print('Rising timedelay: ' + str(BD.risingTimeDelay) + 'us, (' + str(BD.CPU_UP[0,BD.t0_rising_ind]) + '; ' + str(BD.CPU_DW[0,BD.t1_rising_ind]) + ')')
     print('Falling timedelay: ' + str(BD.fallingTimeDelay) + 'us, (' + str(BD.CPU_UP[0,BD.t0_falling_ind]) + '; ' + str(BD.CPU_DW[0,BD.t1_falling_ind]) + ')')
-    
-    
+      
     plotData(BD,BD_ref)
 
 
+    plt.show()
+
 if __name__ == "__main__":
     main()
+    
+    
+    
+    
+    
+    
+    
