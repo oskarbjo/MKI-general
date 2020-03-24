@@ -82,10 +82,10 @@ class winCCData():
         self.pulseLengthPlot = self.pulseLength[ind1:ind2]
         self.timeHoursPlot = np.divide(self.timeSecondsPlot,3600)
         
-    def plotwinCCdata(self,plotDateEveryN):
+    def plotwinCCdata(self,plotDateEveryN,vacuumMin,vacuumMax):
         figure, axis_1 = plt.subplots(num=None, figsize=(11, 6), dpi=140, facecolor='w', edgecolor='k')
         p1,=axis_1.semilogy(self.timeHoursPlot,self.vacuumPlot,color='blue',label='Pressure')
-        plt.ylim([1e-11,1e-4])
+        plt.ylim([vacuumMin,vacuumMax])
         plt.ylabel('Pressure [Bar]')
         plt.xlabel('Time [Hours]')
         plt.xlim([np.min(self.timeHoursPlot),np.max(self.timeHoursPlot)])
@@ -127,12 +127,15 @@ winccPath = r"G:\Departments\TE\Groups\ABT\Sections\PPE\Users\objorkqv\temp/"
 #Time stamps (be mindful that the data set needs to contain the selected time stamps)
 timeStamp1 = '20/02/2020 07:00:00' #Start timestamp, must have format '20/02/2020 11:08:14'
 timeStamp2 = '26/02/2020 06:59:00' #End timestamp, must have format '20/02/2020 11:08:14'
-winCC = winCCData(winccPath)
+winCC = winCCData(winccPath)        
 winCC.getDemandedDates(timeStamp1,timeStamp2)
-dateTickEveryNseconds = 100000
-winCC.plotwinCCdata(dateTickEveryNseconds)
+dateTickEveryNseconds = 100000      #Plot a date tick every N seconds
+vacuumMin = 1e-11
+vacuumMax = 1e-6
+winCC.plotwinCCdata(dateTickEveryNseconds,vacuumMin,vacuumMax)
 print('Done')
 #      winCC.vacuumExpFit()
 plt.show()
+
 
     
