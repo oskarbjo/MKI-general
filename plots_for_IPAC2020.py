@@ -3,10 +3,7 @@ from os import listdir
 from os.path import isfile, join
 import matplotlib.pyplot as plt
 
-font = {'family' : 'normal',
-        'weight' : 'bold',
-        'size'   : 13}
-
+font = {'size'   : 14}
 plt.rc('font', **font)
 
 #region/
@@ -398,12 +395,17 @@ thermCond = [12.554,
 path = r"C:\Users\objorkqv\cernbox\Documents\Measurements\Ferrite aga measurements\CMD10_csv.csv"
 data = f=np.loadtxt(path,delimiter=',',unpack=True,usecols=[0,1,2],skiprows=1)
 
+path2=r"E:\Ansys\MKICool_reduced_full\cooling transients, measured data\MKIcool_transients_simulated_data.csv"
+MKIdata = np.double(np.loadtxt(path2,delimiter=',',unpack=True,dtype=np.unicode,usecols=[0,1,2,3,4],skiprows=2))
+
 
 plt.figure()
 plt.plot(Cp_T,np.multiply(Cp,1000))
 plt.xlabel('Temperature [C]')
 plt.ylabel('Specific heat [J/(kg*K)]')
 plt.grid()
+plt.xlim([np.min(Cp_T),np.max(Cp_T)])
+
 
 
 plt.figure()
@@ -411,13 +413,14 @@ plt.plot(CTE_T,np.multiply(1e6,CTE))
 plt.grid()
 plt.ylabel('Coefficient of thermal expansion [10^-6/K]')
 plt.xlabel('Temperature [C]')
+plt.xlim([np.min(CTE_T),np.max(CTE_T)])
  
 plt.figure()
 plt.plot(thermCond_T,thermCond)
 plt.xlabel('Temperature [C]')
 plt.ylabel('Thermal conductance [W/(m*K)]')
 plt.grid()
-
+plt.xlim([np.min(thermCond_T),np.max(thermCond_T)])
  
 plt.figure()
 plt.plot(data[0,:],data[1,:])
@@ -428,6 +431,21 @@ plt.ylabel('Relative permeability')
 plt.legend(['Real','Imag'])
 plt.grid()
 
+
+plt.figure()
+plt.plot(MKIdata[0,:],MKIdata[4,:],'k',linestyle='-',label="x 2.5")
+plt.plot(MKIdata[0,:],MKIdata[3,:],'k',linestyle='--',label="x 2.0")
+plt.plot(MKIdata[0,:],MKIdata[2,:],'k',linestyle='-.',label="x 1.5")
+plt.plot(MKIdata[0,:],MKIdata[1,:],'k',linestyle=':',label="x 1.0")
+plt.grid(color='k')
+plt.legend(loc='lower right', shadow=True, fontsize=12)
+plt.xlabel('Time [s]')
+plt.ylabel('Temperature [$^{\circ}$ C]')
+plt.xlim([np.min(MKIdata[0,:]),np.max(MKIdata[0,:])])
+plt.ylim([np.min(MKIdata[4,:]),1.1*np.max(MKIdata[4,:])])
+plt.tight_layout()
+
+plt.plot()
 
 
 plt.show()
