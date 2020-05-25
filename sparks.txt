@@ -1,0 +1,9 @@
+Number of strong sparks: 1
+Number of weak sparks: 2
+
+ --------- Strong sparks: --------- 
+Timestamp: 24/05/2020 01:52:59.372, pressure: 1.65157331366572e-07
+
+ --------- Weak sparks: --------- 
+Timestamp: 23/05/2020 14:59:05.872, pressure: 1.37288882484654e-08
+Timestamp: 21/05/2020 20:08:30.872, pressure: 7.47667794342988e-09

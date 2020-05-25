@@ -117,9 +117,9 @@ class winCCData():
         plt.xlim([np.min(self.timeHoursPlot),np.max(self.timeHoursPlot)])
         plt.savefig(Plotfilename, bbox_inches='tight', dpi=200)
         print('Plot Saved As: ',Plotfilename)
-        print('Total pulse count = ',self.NpulsesPlotFinal) # last element of list
+        print('Total pulse count = ',self.NpulsesFinal) # last element of list
         print('Last demanded voltage = ',self.VrefFinal,' kV') # last element of list
-        print('Last reference voltage = ',self.VrefMeas,' kV') # last element of list
+        print('Last measured voltage = ',self.VmeasFinal,' kV') # last element of list
         
     def vacuumExpFit(self):
         t1=103772
@@ -134,15 +134,32 @@ class winCCData():
         
     def findSparks(self):
         #Finds rising edges for the specified vacuum limits
-        weakSparkLimit = 1.0e-9
-        strongSparkLimit = 2e-9
+        weakSparkLimit = 5.0e-9
+        strongSparkLimit = 3e-8
         vacuumAsArray = np.array(self.vacuumPlot)
         weakSparkIndices = np.flatnonzero((vacuumAsArray [:-1] < weakSparkLimit) & (vacuumAsArray [1:] > weakSparkLimit))+1
         strongSparkIndices = np.flatnonzero((vacuumAsArray [:-1] < strongSparkLimit) & (vacuumAsArray [1:] > strongSparkLimit))+1
+        weakSparkIndices = list(set(weakSparkIndices)^set(strongSparkIndices)) #Remove sparks that are counted twice
         numberStrongSparks = len(strongSparkIndices)
-        numberWeakSparks = len(weakSparkIndices) - numberStrongSparks
-        print('Number of strong sparks: ' + str(numberStrongSparks))
-        print('Number of weak sparks: ' + str(numberWeakSparks))
+        numberWeakSparks = len(weakSparkIndices)
+        
+        
+        # Prep all the text output to save:
+        out1 = 'Number of strong sparks: ' + str(numberStrongSparks) + '\n'
+        out2 = 'Number of weak sparks: ' + str(numberWeakSparks) + '\n'
+        out3 = '\n --------- Strong sparks: --------- \n'
+        for i in range(0,numberStrongSparks):
+            out3 = out3 + 'Timestamp: ' + str(self.timeStamps[strongSparkIndices[i]]) + ', pressure: ' + str(np.format_float_scientific(self.vacuum[strongSparkIndices[i]])) + '\n'
+        out4 = '\n --------- Weak sparks: --------- \n'
+        for i in range(0,numberWeakSparks):
+            out4 = out4 + 'Timestamp: ' + str(self.timeStamps[weakSparkIndices[i]]) + ', pressure: ' + str(np.format_float_scientific(self.vacuum[weakSparkIndices[i]])) + '\n'
+        
+        out = out1 + out2 + out3 + out4
+        
+        #Print and write to file:
+        print(out)
+        file = open('sparks.txt','w')
+        file.write(out)
         
 def exponential_func(x, a, b, c):
     return a*np.exp(-b*x)+c
@@ -151,10 +168,10 @@ def exponential_func(x, a, b, c):
 
 ###################### Plot winCC data: ######################
 # File path of exported winCC data (has to be tab delimited .csv!)
-winccPath = r"\\cern.ch\dfs\Departments\TE\Groups\ABT\Users\B\BJORKQVIST_Oskar\temp/"
+winccPath = r"\\cern.ch\dfs\Departments\TE\Groups\ABT\Users\B\BJORKQVIST_Oskar\winCC export\Export conditioning MKI cool post covid/"
 #Time stamps (be mindful that the data set needs to contain the selected time stamps)
-timeStamp1 = '20/02/2020 07:00:00' #Start timestamp, must have format '20/02/2020 11:08:14'
-timeStamp2 = '26/02/2020 06:59:00' #End timestamp, must have format '20/02/2020 11:08:14'
+timeStamp1 = '19/05/2020 07:00:00' #Start timestamp, must have format '20/02/2020 11:08:14'
+timeStamp2 = '25/05/2020 06:59:00' #End timestamp, must have format '20/02/2020 11:08:14'
 Plotfilename = 'WinCC_Plot_20022020-18032020.png' # Name of plot export
 winCC = winCCData(winccPath)        
 winCC.getDemandedDates(timeStamp1,timeStamp2)
