@@ -1,3 +1,4 @@
+Weak spark limit: 5e-09, Strong spark limit: 3e-08
 Number of strong sparks: 1
 Number of weak sparks: 2
 

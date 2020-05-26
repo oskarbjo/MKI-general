@@ -4,7 +4,7 @@ from scipy.optimize import curve_fit
 from itertools import groupby
 from os import listdir
 from os.path import isfile, join
-
+#%matplotlib notebook
 print('*** Running Script ***')
 
 class winCCData():
@@ -28,8 +28,10 @@ class winCCData():
     def extractData(self):
         fileNames= [f for f in listdir(self.filePath) if isfile(join(self.filePath, f))] #find files in path
         for file in fileNames: #Iterate through found files
-            data=np.loadtxt(self.filePath + file,skiprows=1,dtype=np.unicode, unpack=True, encoding="utf16") #Load data - if there is an encoding issue, try 'utf8'
-            
+            try:
+                data=np.loadtxt(self.filePath + file,skiprows=1,dtype=np.unicode, unpack=True, encoding="utf16") #Load data - if there is an encoding issue, try 'utf8'
+            except:
+                print('There was an encoding error - probably because there are other files than the WinCC data in the directory. \nIf the WinCC data has been saved correctly, this is not a problem')
             #Initialize temporary variables
             timeStamps = []
             timeStampsShort = []
@@ -74,8 +76,10 @@ class winCCData():
         print('Counter curve unfolded')
         
     
-    def getDemandedDates(self,timeStamp1,timeStamp2):
+    def getDemandedDates(self,timeStamp1,timeStamp2,pulseCounterOffset,totalTimeOffsetHours):
         #Filters out data for the requested dates
+        self.totalTimeOffset = totalTimeOffsetHours
+        self.pulseCounterOffset = pulseCounterOffset
         self.t1 = timeStamp1
         self.t2 = timeStamp2
         ind1 = [i for i, s in enumerate(self.timeStamps) if self.t1 in s][0]
@@ -85,9 +89,9 @@ class winCCData():
         self.vacuumPlot = self.vacuum[ind1:ind2]
         self.VrefPlot = self.Vref[ind1:ind2]
         self.VmeasPlot = self.Vmeas[ind1:ind2]
-        self.NpulsesPlot = self.Npulses[ind1:ind2]
+        self.NpulsesPlot = self.Npulses[ind1:ind2] + pulseCounterOffset
         self.pulseLengthPlot = self.pulseLength[ind1:ind2]
-        self.timeHoursPlot = np.divide(self.timeSecondsPlot,3600)
+        self.timeHoursPlot = np.divide(self.timeSecondsPlot,3600) + totalTimeOffsetHours
         self.VrefFinal = np.round(self.VrefPlot[-1],4)
         self.VmeasFinal = np.round(self.VmeasPlot[-1],4)
         self.NpulsesFinal = self.NpulsesPlot[-1]
@@ -117,7 +121,8 @@ class winCCData():
         plt.xlim([np.min(self.timeHoursPlot),np.max(self.timeHoursPlot)])
         plt.savefig(Plotfilename, bbox_inches='tight', dpi=200)
         print('Plot Saved As: ',Plotfilename)
-        print('Total pulse count = ',self.NpulsesFinal) # last element of list
+        print('Total pulse count = ',self.NpulsesFinal, 'using an offset of ', str(self.pulseCounterOffset), ' pulses') # last element of list
+        print('Total run time = ', self.timeHoursPlot[-1], 'hours, using an offset of ', str(self.totalTimeOffset), ' hours')
         print('Last demanded voltage = ',self.VrefFinal,' kV') # last element of list
         print('Last measured voltage = ',self.VmeasFinal,' kV') # last element of list
         
@@ -145,8 +150,10 @@ class winCCData():
         
         
         # Prep all the text output to save:
+        out0 = 'Weak spark limit: ' + str(weakSparkLimit) + ', Strong spark limit: ' + str(strongSparkLimit) + '\n'
         out1 = 'Number of strong sparks: ' + str(numberStrongSparks) + '\n'
         out2 = 'Number of weak sparks: ' + str(numberWeakSparks) + '\n'
+        out21 = 'Run time: ' + str(self.timeHoursPlot[-1]) + ' hours\nTotal number of pulses: ' + str(self.NpulsesFinal) + '\n'
         out3 = '\n --------- Strong sparks: --------- \n'
         for i in range(0,numberStrongSparks):
             out3 = out3 + 'Timestamp: ' + str(self.timeStamps[strongSparkIndices[i]]) + ', pressure: ' + str(np.format_float_scientific(self.vacuum[strongSparkIndices[i]])) + '\n'
@@ -154,31 +161,40 @@ class winCCData():
         for i in range(0,numberWeakSparks):
             out4 = out4 + 'Timestamp: ' + str(self.timeStamps[weakSparkIndices[i]]) + ', pressure: ' + str(np.format_float_scientific(self.vacuum[weakSparkIndices[i]])) + '\n'
         
-        out = out1 + out2 + out3 + out4
+        out = out0 + out1 + out2 + out21 + out3 + out4
         
         #Print and write to file:
         print(out)
-        file = open('sparks.txt','w')
+        file = open(self.filePath + 'sparks.txt','w')
         file.write(out)
+        print('Spark data saved in ' + str(self.filePath) + '/sparks.txt')
         
 def exponential_func(x, a, b, c):
     return a*np.exp(-b*x)+c
 
 
 
-###################### Plot winCC data: ######################
+###################### Plot winCC data #######################
+######################## USER INPUTS: ########################
+
 # File path of exported winCC data (has to be tab delimited .csv!)
-winccPath = r"\\cern.ch\dfs\Departments\TE\Groups\ABT\Users\B\BJORKQVIST_Oskar\winCC export\Export conditioning MKI cool post covid/"
-#Time stamps (be mindful that the data set needs to contain the selected time stamps)
-timeStamp1 = '19/05/2020 07:00:00' #Start timestamp, must have format '20/02/2020 11:08:14'
-timeStamp2 = '25/05/2020 06:59:00' #End timestamp, must have format '20/02/2020 11:08:14'
+# The files will be read in alphabetical order so it is important that they are named correctly
+# Previously we have used the convention: 2020-05-19_2020-05-22.csv etc.
+winccPath = r"\\cern.ch\dfs\Departments\TE\Groups\ABT\Users\B\BJORKQVIST_Oskar\winCC export\Export conditioning MKI cool pre covid/"
+# Time stamps (be mindful that the data set needs to contain the selected time stamps):
+timeStamp1 = '20/02/2020 07:00:00' #Start timestamp, must have format '20/02/2020 11:08:14'
+timeStamp2 = '09/03/2020 06:59:00' #End timestamp, must have format '20/02/2020 11:08:14'
 Plotfilename = 'WinCC_Plot_20022020-18032020.png' # Name of plot export
-winCC = winCCData(winccPath)        
-winCC.getDemandedDates(timeStamp1,timeStamp2)
-winCC.findSparks()
 dateTickEveryNseconds = 50000      #Plot a date tick every 0.5*N seconds
-vacuumMin = 1e-11
-vacuumMax = 1e-6
+vacuumMin = 1e-11 #Vacuum lower limit for plot
+vacuumMax = 1e-6  #Vacuum upper limit for plot
+pulseCounterOffset =  1000 # If the user wants to manually add pulses to the pulse counter
+totalTimeOffsetHours = 1000 #If the user wants to manually add time (in hours) to the time counter
+
+# Run the class file that fetches and plots the data:
+winCC = winCCData(winccPath)        
+winCC.getDemandedDates(timeStamp1,timeStamp2,pulseCounterOffset,totalTimeOffsetHours)
+winCC.findSparks()
 winCC.plotwinCCdata(dateTickEveryNseconds,vacuumMin,vacuumMax,Plotfilename)
 print('*** Done ***')
 #      winCC.vacuumExpFit()
