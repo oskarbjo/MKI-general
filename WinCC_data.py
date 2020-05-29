@@ -4,6 +4,7 @@ from scipy.optimize import curve_fit
 from itertools import groupby
 from os import listdir
 from os.path import isfile, join
+from datetime import datetime
 #%matplotlib notebook
 print('*** Running Script ***')
 
@@ -105,8 +106,8 @@ class winCCData():
         plt.xlim([np.min(self.timeHoursPlot),np.max(self.timeHoursPlot)])
 #         plt.ylim([1e-11, 1e-5])
         axis_2 = axis_1.twinx()
-        p2,=axis_2.plot(self.timeHoursPlot,self.VrefPlot,color='green',label='Vref (final = ' + str(self.VrefFinal) + ')')
-        p3,=axis_2.plot(self.timeHoursPlot,self.VmeasPlot,color='red',label='Vmeas (final = ' + str(self.VmeasFinal) + ')')
+        p2,=axis_2.plot(self.timeHoursPlot,self.VrefPlot,color='green',label='Vref (final = ' + str(self.VrefFinal) + ' kV)')
+        p3,=axis_2.plot(self.timeHoursPlot,self.VmeasPlot,color='red',label='Vmeas (final = ' + str(self.VmeasFinal) + ' kV)')
         plt.ylabel('Voltage [kV]')
         plt.ylim([25, 60])
         axis_3 = axis_1.twinx()
@@ -121,8 +122,8 @@ class winCCData():
         plt.xlim([np.min(self.timeHoursPlot),np.max(self.timeHoursPlot)])
         plt.savefig(Plotfilename, bbox_inches='tight', dpi=200)
         print('Plot Saved As: ',Plotfilename)
-        print('Total pulse count = ',self.NpulsesFinal, 'using an offset of ', str(self.pulseCounterOffset), ' pulses') # last element of list
-        print('Total run time = ', self.timeHoursPlot[-1], 'hours, using an offset of ', str(self.totalTimeOffset), ' hours')
+#         print('Total pulse count = ',self.NpulsesFinal, 'using an offset of ', str(self.pulseCounterOffset), ' pulses') # last element of list
+#         print('Total run time = ', self.timeHoursPlot[-1], 'hours, using an offset of ', str(self.totalTimeOffset), ' hours')
         print('Last demanded voltage = ',self.VrefFinal,' kV') # last element of list
         print('Last measured voltage = ',self.VmeasFinal,' kV') # last element of list
         
@@ -137,23 +138,26 @@ class winCCData():
         plt.plot(np.arange(-1,Td),curveFit)
         plt.grid()
         
-    def findSparks(self):
+    def findSparks(self,weakSparkLimit,strongSparkLimit):
         #Finds rising edges for the specified vacuum limits
-        weakSparkLimit = 5.0e-9
-        strongSparkLimit = 3e-8
         vacuumAsArray = np.array(self.vacuumPlot)
-        weakSparkIndices = np.flatnonzero((vacuumAsArray [:-1] < weakSparkLimit) & (vacuumAsArray [1:] > weakSparkLimit))+1
+        self.allSparkIndices = np.flatnonzero((vacuumAsArray [:-1] < weakSparkLimit) & (vacuumAsArray [1:] > weakSparkLimit))+1
         strongSparkIndices = np.flatnonzero((vacuumAsArray [:-1] < strongSparkLimit) & (vacuumAsArray [1:] > strongSparkLimit))+1
-        weakSparkIndices = list(set(weakSparkIndices)^set(strongSparkIndices)) #Remove sparks that are counted twice
+        ind_temp = []
+        for i in strongSparkIndices:
+            ind_temp.append(np.where(self.allSparkIndices == i))
+#         weakSparkIndices = list(set(self.allSparkIndices)^set(strongSparkIndices)) #Remove sparks that are counted twice
+        weakSparkIndices = np.delete(self.allSparkIndices,ind_temp)
         numberStrongSparks = len(strongSparkIndices)
         numberWeakSparks = len(weakSparkIndices)
         
         
         # Prep all the text output to save:
-        out0 = 'Weak spark limit: ' + str(weakSparkLimit) + ', Strong spark limit: ' + str(strongSparkLimit) + '\n'
+        out00 = 'Time range plotted: ' + str(self.timeStampsPlot[0]) + ' - ' + str(self.timeStampsPlot[-1]) + '\n'
+        out0 = 'Weak spark limit: ' + str(weakSparkLimit) + '\nStrong spark limit: ' + str(strongSparkLimit) + '\n'
         out1 = 'Number of strong sparks: ' + str(numberStrongSparks) + '\n'
         out2 = 'Number of weak sparks: ' + str(numberWeakSparks) + '\n'
-        out21 = 'Run time: ' + str(self.timeHoursPlot[-1]) + ' hours\nTotal number of pulses: ' + str(self.NpulsesFinal) + '\n'
+        out21 = 'Run time: ' + str(self.timeHoursPlot[-1]) + ' hours (offset = ' + str(self.totalTimeOffset) + ')\nTotal number of pulses: ' + str(self.NpulsesFinal) + ' (offset = ' + str(self.pulseCounterOffset) +')\n'
         out3 = '\n --------- Strong sparks: --------- \n'
         for i in range(0,numberStrongSparks):
             out3 = out3 + 'Timestamp: ' + str(self.timeStamps[strongSparkIndices[i]]) + ', pressure: ' + str(np.format_float_scientific(self.vacuum[strongSparkIndices[i]])) + '\n'
@@ -161,7 +165,7 @@ class winCCData():
         for i in range(0,numberWeakSparks):
             out4 = out4 + 'Timestamp: ' + str(self.timeStamps[weakSparkIndices[i]]) + ', pressure: ' + str(np.format_float_scientific(self.vacuum[weakSparkIndices[i]])) + '\n'
         
-        out = out0 + out1 + out2 + out21 + out3 + out4
+        out = out00 + out0 + out1 + out2 + out21 + out3 + out4
         
         #Print and write to file:
         print(out)
@@ -169,34 +173,95 @@ class winCCData():
         file.write(out)
         print('Spark data saved in ' + str(self.filePath) + '/sparks.txt')
         
+    
+    def findMisAlignedSparks(self):
+        # Finds the time delays from counter incrementation to sparking
+        
+        #Get a list of time stamps at sparking
+        a=map(self.timeStamps.__getitem__,self.allSparkIndices)
+        self.allSparkTimeStamps = list(a)
+        #Get the pulse counter values at the sparks
+        pulseCounterAtSpark=self.Npulses[self.allSparkIndices]
+        
+        #Find the delay between pulse incrementation and sparking
+        self.pulseCounterStepsPrecedingSpark_index = []
+        for i in range(0,len(pulseCounterAtSpark)):
+            p = self.allSparkIndices[i]
+            while self.Npulses[p] == self.Npulses[self.allSparkIndices[i]]:
+                p = p=p-1
+            self.pulseCounterStepsPrecedingSpark_index.append(p+1)
+            
+        b=map(self.timeStamps.__getitem__,self.pulseCounterStepsPrecedingSpark_index)
+        self.pulseCounterStepsBeforeSpark_timeStamps = list(b)    
+        
+        #Printing out all recorded dates for sparks and preceding pulse counter steps (for debugging):
+        print('Pulse counter steps before sparks, timestamps: ' + str(self.pulseCounterStepsBeforeSpark_timeStamps))
+        print('Sparks timestamps: ' + str(self.allSparkTimeStamps))
+        
+        self.counterDateTimeObject = []
+        self.sparkDateTimeObject = []
+        self.sparkDelays = []
+        for i in range(0,len(self.pulseCounterStepsBeforeSpark_timeStamps)):
+            #Reformating for datetime object
+            counter_timeStamp_temp = self.pulseCounterStepsBeforeSpark_timeStamps[i]
+            spark_timeStamp_temp = self.allSparkTimeStamps[i]
+            counter_timeStamp_temp=counter_timeStamp_temp[6:10]+'-'+ counter_timeStamp_temp[3:5] + '-' + counter_timeStamp_temp[0:2] + ' ' + counter_timeStamp_temp[11:]
+            spark_timeStamp_temp=spark_timeStamp_temp[6:10]+'-'+ spark_timeStamp_temp[3:5] + '-' + spark_timeStamp_temp[0:2] + ' ' + spark_timeStamp_temp[11:]
+            counter_dateTime = datetime.fromisoformat(counter_timeStamp_temp)
+            spark_dateTime = datetime.fromisoformat(spark_timeStamp_temp)
+            sparkDelays_dateTime = (spark_dateTime-counter_dateTime)
+            self.sparkDelays.append(sparkDelays_dateTime.seconds)
+            self.counterDateTimeObject.append(counter_dateTime)
+            self.sparkDateTimeObject.append(spark_dateTime.isoformat())
+        
+        figure, ax1 = plt.subplots(num=None, figsize=(11, 6), dpi=140, facecolor='w', edgecolor='k')
+        plt.stem(self.sparkDelays)
+        plt.xlim([0, len(self.sparkDelays)-1])
+        plt.ylim([0, 20])
+        plt.grid()
+        plt.xlabel('Spark number')
+        plt.ylabel('Delay from pulse counter incrementation to spark [seconds]')
+        ax = ax1.twiny()
+        ax.set_xticks(np.arange(0,len(self.sparkDelays)))
+        ax.set_xticklabels(self.allSparkTimeStamps,rotation=90)
+        ax.tick_params(labelsize=5)
+        figure.tight_layout()
+        
+        
 def exponential_func(x, a, b, c):
     return a*np.exp(-b*x)+c
 
 
 
 ###################### Plot winCC data #######################
-######################## USER INPUTS: ########################
+
+# USER INPUTS:
 
 # File path of exported winCC data (has to be tab delimited .csv!)
 # The files will be read in alphabetical order so it is important that they are named correctly
 # Previously we have used the convention: 2020-05-19_2020-05-22.csv etc.
-winccPath = r"\\cern.ch\dfs\Departments\TE\Groups\ABT\Users\B\BJORKQVIST_Oskar\winCC export\Export conditioning MKI cool pre covid/"
+winccPath = r"\\cern.ch\dfs\Departments\TE\Groups\ABT\Users\B\BJORKQVIST_Oskar\winCC export\Export conditioning MKI cool post covid/"
 # Time stamps (be mindful that the data set needs to contain the selected time stamps):
-timeStamp1 = '20/02/2020 07:00:00' #Start timestamp, must have format '20/02/2020 11:08:14'
-timeStamp2 = '09/03/2020 06:59:00' #End timestamp, must have format '20/02/2020 11:08:14'
+timeStamp1 = '19/05/2020 07:00:00' #Start timestamp, must have format '20/02/2020 11:08:14'
+timeStamp2 = '28/05/2020 06:59:00' #End timestamp, must have format '20/02/2020 11:08:14'
 Plotfilename = 'WinCC_Plot_20022020-18032020.png' # Name of plot export
 dateTickEveryNseconds = 50000      #Plot a date tick every 0.5*N seconds
 vacuumMin = 1e-11 #Vacuum lower limit for plot
 vacuumMax = 1e-6  #Vacuum upper limit for plot
-pulseCounterOffset =  1000 # If the user wants to manually add pulses to the pulse counter
-totalTimeOffsetHours = 1000 #If the user wants to manually add time (in hours) to the time counter
+weakSparkLimit = 5.0e-9 #Weak spark vacuum limit
+strongSparkLimit = 3e-8 #Strong spark vacuum limit
+pulseCounterOffset =  0 # If the user wants to manually add pulses to the pulse counter
+totalTimeOffsetHours = 0 #If the user wants to manually add time (in hours) to the time counter
 
 # Run the class file that fetches and plots the data:
 winCC = winCCData(winccPath)        
 winCC.getDemandedDates(timeStamp1,timeStamp2,pulseCounterOffset,totalTimeOffsetHours)
-winCC.findSparks()
+winCC.findSparks(weakSparkLimit,strongSparkLimit)
+winCC.findMisAlignedSparks()
 winCC.plotwinCCdata(dateTickEveryNseconds,vacuumMin,vacuumMax,Plotfilename)
-print('*** Done ***')
 #      winCC.vacuumExpFit()
 plt.show()
+print('*** Done ***')
+
+
 
